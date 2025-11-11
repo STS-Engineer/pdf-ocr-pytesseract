@@ -21,9 +21,8 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 
-# Base dir for server-side pdf_path (restrict paths for safety)
-SAFE_BASE_DIR = Path(__file__).parent.resolve() / "data"
-SAFE_BASE_DIR.mkdir(exist_ok=True)
+# Base dir for server-side pdf_path (CHANGED: now points to repo root)
+SAFE_BASE_DIR = Path(__file__).parent.resolve()  # This is the repo root where app.py lives
 
 
 def allowed_file(filename: str) -> bool:
@@ -131,7 +130,7 @@ def home():
     """API documentation"""
     return jsonify({
         'service': 'OCR API',
-        'version': '1.1',
+        'version': '1.2',
         'endpoints': {
             '/': 'API documentation (GET)',
             '/ocr/pdf': 'Process PDF file (POST)',
@@ -147,7 +146,7 @@ def home():
             },
             'pdf (JSON)': {
                 'file_url': 'http(s) URL to a PDF (optional)',
-                'pdf_path': 'server-side path under ./data (optional)',
+                'pdf_path': 'server-side path in repo root (optional)',
                 'language': 'eng (optional)',
                 'max_pages': 10,
                 'dpi': 200
@@ -162,7 +161,8 @@ def home():
             'max_pages_cap': 20,
             'dpi_cap': 300,
             'allowed_formats': list(ALLOWED_EXTENSIONS)
-        }
+        },
+        'note': f'pdf_path looks for files in: {SAFE_BASE_DIR}'
     })
 
 
@@ -178,7 +178,7 @@ def ocr_pdf():
     Process PDF with OCR. Accepts:
       - multipart/form-data: file=<PDF file>
       - JSON or form-data:   file_url=<http/https url to a PDF>
-      - JSON or form-data:   pdf_path=<server-side path under SAFE_BASE_DIR>
+      - JSON or form-data:   pdf_path=<server-side path in repo root>
 
     Example JSON body:
     {
@@ -240,12 +240,12 @@ def ocr_pdf():
                 should_delete_tmp = True
                 source = 'url'
 
-        # 3) pdf_path (server-side)
+        # 3) pdf_path (server-side in repo root)
         elif 'pdf_path' in payload and payload['pdf_path']:
             user_path_raw = str(payload['pdf_path']).strip()
             user_path = Path(user_path_raw)
 
-            # If relative, treat as relative to SAFE_BASE_DIR
+            # If relative, treat as relative to SAFE_BASE_DIR (repo root)
             if not user_path.is_absolute():
                 user_path = (SAFE_BASE_DIR / user_path).resolve()
 
