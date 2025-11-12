@@ -1,10 +1,21 @@
-
 services:
   - type: web
-    name: pdf-ocr-pytesseract
+    name: pdf-ocr-api
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn app:app --workers 2 --timeout 120
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: "3.11"
+```
+
+**Important:** Remove any `apt-get` commands from `render.yaml` if you have them. The `Aptfile` will handle system dependencies automatically.
+
+## After Renaming
+
+1. **Render will auto-deploy** after you commit the change
+2. **Watch the logs** - you should see:
+```
+   ==> Installing packages from Aptfile
+   ==> Installing tesseract-ocr
+   ==> Installing poppler-utils
